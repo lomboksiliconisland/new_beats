@@ -15,6 +15,7 @@ object Games {
     var ctx: Context? = null
     var con: ConnectionInfo? = null
 
+
     // group name to list of members
     val groups: MutableMap<String, GroupData> = mutableMapOf()
     val personalData: MutableMap<String, MutableMap<Int, List<Action>>> = mutableMapOf()
@@ -179,7 +180,6 @@ object Games {
             }
         }
     }
-
  */
 
     private fun saveGameData(user: String, str: String) {
@@ -209,6 +209,16 @@ object Games {
                 // broadcast update to all group members
                 Nearby.getConnectionsClient(it).sendPayload(dts, DataShare(CMD_GROUP_GAME, data).toPayload())
             }
+
+            Servers.addBlock(BlockPojo().apply {
+                assessmentId = "G_${groupID}"
+                taskId = data.taskID.toString()
+                color = getColorName(data.action.tile.color)
+                timestamp = data.action.tile.timestamp.toString()
+                pos_x = data.action.x.toString()
+                pos_y = data.action.y.toString()
+                username = users[user]?.name ?: user
+            })
         }
     }
 
@@ -218,5 +228,14 @@ object Games {
             handleNewGame(user)
         }
         gameSessions[user]?.saveActionLog(data)
+        Servers.addBlock(BlockPojo().apply {
+            assessmentId = "P_${user}_${users[user]?.name}"
+            taskId = data.taskID.toString()
+            color = getColorName(data.action.tile.color)
+            timestamp = data.action.tile.timestamp.toString()
+            pos_x = data.action.x.toString()
+            pos_y = data.action.y.toString()
+            username = users[user]?.name ?: user
+        })
     }
 }

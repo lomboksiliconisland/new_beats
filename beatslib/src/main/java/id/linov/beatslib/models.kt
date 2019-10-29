@@ -145,6 +145,15 @@ enum class Colors {
     R, G, B, Y, W
 }
 
+fun getColorName(c: Colors): String {
+    return when(c) {
+        Colors.Y -> "yellow"
+        Colors.B -> "blue"
+        Colors.R -> "red"
+        else -> "white"
+    }
+}
+
 const val CMD_NEW_GAME = 0
 const val CMD_GAME_DATA = 1
 const val CMD_ADD_USER = 2
