@@ -8,11 +8,11 @@
     tools:context=".GameActivity">
 
     <TextView
-        android:id="@+id/title"
+        android:id="@+id/txtTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="BEATS PERSONAL"
+        android:text="PERSONAL"
         android:textColor="@color/col_grey_1000w"
         android:textSize="30sp"
         android:textStyle="bold"
@@ -47,7 +47,7 @@
         app:layout_constraintBottom_toTopOf="@id/btnContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/recycler"
-        app:layout_constraintTop_toBottomOf="@id/title" />
+        app:layout_constraintTop_toBottomOf="@id/txtTitle" />
 
     <LinearLayout
         android:id="@+id/btnContainer"

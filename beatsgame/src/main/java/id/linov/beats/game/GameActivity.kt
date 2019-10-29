@@ -129,6 +129,7 @@ class GameActivity : AppCompatActivity(), GameListener {
         }
         btnStartGame.visibility = vis
         btnEndGame.visibility = vis
+        txtTitle.text = if (Game.gameType == GameType.PERSONAL) "PERSONAL" else "GROUP ${Game.groupID}"
     }
 
     override fun onBackPressed() {
@@ -136,6 +137,7 @@ class GameActivity : AppCompatActivity(), GameListener {
             .setMessage("Are you sure want to close?")
             .setPositiveButton("Ok, Close and Finish") { _, _ ->
                 timer.cancel()
+                ServerContactor.finished()
                 super.onBackPressed()
             }
             .setNegativeButton("No, Continue Playing") { di, _ ->
