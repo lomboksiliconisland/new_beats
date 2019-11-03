@@ -19,31 +19,20 @@ import id.linov.beatslib.interfaces.GameListener
 import java.lang.Exception
 
 
-object ServerContactor {
-    val tasks: List<BeatsTask> = listOf(
-        BeatsTask(0, 10, duration = 120000),
-        BeatsTask(1, 10, duration = 120000),
-        BeatsTask(2, 10, duration = 120000),
-        BeatsTask(3, 15, duration = 120000),
-        BeatsTask(4, 15, duration = 120000),
-        BeatsTask(5, 15, duration = 120000),
-        BeatsTask(6, 20, duration = 120000),
-        BeatsTask(7, 20, duration = 120000),
-        BeatsTask(8, 20, duration = 120000)
-    )
+class ServerContactor: GameContactor {
 
     var connection: ConnectionsClient? = null
-    var groupListener: GroupListener? = null
-    var groupData: GroupData? = null
+    override var groupListener: GroupListener? = null
     var appContext: Context? = null
-    var gameDataListener: GameListener? = null
+    override var groupData: GroupData? = null
+    override var gameDataListener: GameListener? = null
 
-    fun init(context: Context) {
+    override fun init(context: Context) {
         appContext = context
         connection = Nearby.getConnectionsClient(context)
     }
 
-    fun getMyUID() {
+    override fun getMyUID() {
         connection?.sendPayload(Game.serverID ?: "", DataShare(CMD_GET_MYUID, "").toPayload())
     }
 
@@ -194,7 +183,7 @@ object ServerContactor {
         groupListener?.onData(dt)
     }
 
-    fun connectToServer(onConnect: () -> Unit) {
+    override fun connectToServer(onConnect: () -> Unit) {
         val connCallback = object : ConnectionLifecycleCallback() {
             override fun onConnectionResult(p0: String, p1: ConnectionResolution) {
                 e("SUCCESS", "onConnectionResult $p0")
@@ -232,7 +221,7 @@ object ServerContactor {
         }
     }
 
-    fun sendAction(actionLog: ActionLog) {
+    override fun sendAction(actionLog: ActionLog) {
         var recipient:MutableList<String> = (if (Game.groupID != null) Game.groupMembers ?: listOf() else listOf()).toMutableList()
         recipient.add(Game.serverID ?: "")
         e("Sending to ", "members ${recipient.joinToString()}")
@@ -240,11 +229,11 @@ object ServerContactor {
         connection?.sendPayload(recipient, DataShare(CMD_GAME_DATA, actionLog).toPayload())
     }
 
-    fun startNewPersonalGame() {
+    override  fun startNewPersonalGame() {
         connection?.sendPayload(Game.serverID ?: "", DataShare(CMD_NEW_GAME, "").toPayload())
     }
 
-    fun createGroup(name: String) {
+    override fun createGroup(name: String) {
         connection?.sendPayload(Game.serverID ?: "", DataShare(CMD_CREATE_GROUP, name).toPayload())
     }
 
@@ -256,37 +245,37 @@ object ServerContactor {
         groupListener = null
     }
 
-    fun joinGroup(selectedGroup: GroupData) {
+    override fun joinGroup(selectedGroup: GroupData) {
         connection?.sendPayload(
             Game.serverID ?: "",
             DataShare(CMD_JOIN_GROUP, selectedGroup.name).toPayload()
         )
     }
 
-    fun getGroups() {
+    override fun getGroups() {
         connection?.sendPayload(Game.serverID ?: "", DataShare(CMD_GET_GROUPS, "").toPayload())
     }
 
-    fun addUser() {
+    override fun addUser() {
         connection?.sendPayload(
             Game.serverID ?: "",
             DataShare(CMD_ADD_USER, Game.userInformation).toPayload()
         )
     }
 
-    fun startNewGroupGame() {
+    override fun startNewGroupGame() {
         connection?.sendPayload(Game.serverID ?: "", DataShare(CMD_GROUP_GAME_NEW, Game.groupID).toPayload())
     }
 
-    fun startNewTask(taskID: Int) {
+    override fun startNewTask(taskID: Int) {
         connection?.sendPayload(Game.serverID ?: "", DataShare(CMD_START_TASK, GroupTask(Game.groupID?: "", taskID)).toPayload())
     }
 
-    fun finished() {
+    override fun finished() {
 //        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    fun leaveGroup() {
+    override fun leaveGroup() {
         connection?.sendPayload(Game.serverID ?: "", DataShare(CMD_GROUP_LEAVE, "").toPayload())
     }
 }

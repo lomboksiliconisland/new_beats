@@ -13,7 +13,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        ServerContactor.init(applicationContext)
+        Game.contactor.init(applicationContext)
         HandlerCompat.postDelayed(Handler(), {
             startAct(HomeActivity::class.java)
             finish()

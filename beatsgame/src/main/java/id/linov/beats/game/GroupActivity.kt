@@ -45,9 +45,9 @@ class GroupActivity : AppCompatActivity(), GroupListener, GameListener {
 
     private fun updateListener() {
         if (isJoined()) {
-            ServerContactor.groupData = selectedGroup
+            Game.contactor.groupData = selectedGroup
         } else {
-            ServerContactor.groupData = null
+            Game.contactor.groupData = null
             Game.groupID = null
             Game.groupLeadID = null
         }
@@ -75,7 +75,7 @@ class GroupActivity : AppCompatActivity(), GroupListener, GameListener {
         setContentView(R.layout.activity_group)
 
         if (Game.userInformation?.userID == null) {
-            ServerContactor.getMyUID()
+            Game.contactor.getMyUID()
         }
 
         btnNewGroup.setOnClickListener {
@@ -93,24 +93,24 @@ class GroupActivity : AppCompatActivity(), GroupListener, GameListener {
     }
 
     private fun createNewGroup() {
-        ServerContactor.createGroup(inputGN.text.toString())
+        Game.contactor.createGroup(inputGN.text.toString())
         inputGN.visibility = View.GONE
     }
 
     override fun onPause() {
         super.onPause()
-        ServerContactor.removeGroupListenet()
+        Game.contactor.groupListener = null
     }
 
     override fun onResume() {
         super.onResume()
-        ServerContactor.groupListener(this)
-        ServerContactor.getGroups()
+        Game.contactor.groupListener = this
+        Game.contactor.getGroups()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        ServerContactor.groupData = null
+        Game.contactor.groupData = null
         Game.groupID = null
     }
 
@@ -166,9 +166,9 @@ class GroupActivity : AppCompatActivity(), GroupListener, GameListener {
         btnPlay.setOnClickListener {
             if (isLead()) {
                 // todo start game
-                ServerContactor.startNewGroupGame()
+                Game.contactor.startNewGroupGame()
             } else if (isJoined()) {
-                ServerContactor.leaveGroup()
+                Game.contactor.leaveGroup()
             } else {
                 selectedGroup?.let {
                     joinGroup(it)
@@ -195,7 +195,7 @@ class GroupActivity : AppCompatActivity(), GroupListener, GameListener {
     }
 
     private fun joinGroup(selectedGroup: GroupData) {
-        ServerContactor.joinGroup(selectedGroup)
+        Game.contactor.joinGroup(selectedGroup)
     }
 }
 

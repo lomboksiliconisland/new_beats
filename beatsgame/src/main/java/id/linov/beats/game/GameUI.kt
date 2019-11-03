@@ -115,7 +115,7 @@ class GameUI @JvmOverloads constructor(
         Game.actions.add(act)
 
         val group = if (Game.gameType == PERSONAL) null else Game.groupID
-        ServerContactor.sendAction(
+        Game.contactor.sendAction(
             ActionLog(
                 Game.userInformation?.userID,
                 group,

@@ -44,7 +44,7 @@ class HomeGameFrag: Fragment() {
 
     private fun startPersonalTest() {
         llProgress.visibility = View.VISIBLE
-        ServerContactor.startNewPersonalGame()
+        Game.contactor.startNewPersonalGame()
     }
 
     private fun startGroupTest() {

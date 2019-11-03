@@ -28,24 +28,28 @@ object Games {
         ctx = context
     }
 
+    fun handleData(str: String, user: String) {
+        e("PAYLOAD", "FROM $user $str")
+        val dt = Gson().fromJson<DataShare<Any>>(str, DataShare::class.java)
+        when (dt?.command) {
+            CMD_GAME_DATA -> saveGameData(user, str)
+            CMD_CREATE_GROUP -> createGroup(user, str)
+            CMD_GET_GROUPS -> getGroups(user)
+            CMD_JOIN_GROUP -> joinGroup(user, str)
+            CMD_GET_MYUID -> handleGetUID(user)
+            CMD_ADD_USER -> addUser(user, str)
+            CMD_NEW_GAME -> handleNewGame(user)
+            CMD_GROUP_GAME_NEW -> handleCreateGroupGame(user, str)
+            CMD_START_TASK -> broadcastTaskID(user, str)
+            CMD_GROUP_LEAVE -> leaveGroup(user)
+        }
+    }
+
     fun save(user: String, p: Payload) {
         if (p.type == Payload.Type.BYTES) {
             p.asBytes()?.let {
                 val str = String(it)
-                e("PAYLOAD", "FROM $user $str")
-                val dt = Gson().fromJson<DataShare<Any>>(str, DataShare::class.java)
-                when (dt?.command) {
-                    CMD_GAME_DATA -> saveGameData(user, str)
-                    CMD_CREATE_GROUP -> createGroup(user, str)
-                    CMD_GET_GROUPS -> getGroups(user)
-                    CMD_JOIN_GROUP -> joinGroup(user, str)
-                    CMD_GET_MYUID -> handleGetUID(user)
-                    CMD_ADD_USER -> addUser(user, str)
-                    CMD_NEW_GAME -> handleNewGame(user)
-                    CMD_GROUP_GAME_NEW -> handleCreateGroupGame(user, str)
-                    CMD_START_TASK -> broadcastTaskID(user, str)
-                    CMD_GROUP_LEAVE -> leaveGroup(user)
-                }
+                handleData(str, user)
             }
         }
     }

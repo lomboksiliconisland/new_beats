@@ -17,6 +17,7 @@ import id.linov.beats.game.fragments.GamePlayFragment
 import id.linov.beatslib.ActionLog
 import id.linov.beatslib.BeatsTask
 import id.linov.beatslib.GameType
+import id.linov.beatslib.TASKS
 import id.linov.beatslib.interfaces.GameListener
 import kotlinx.android.synthetic.main.activity_game.*
 import kotlinx.android.synthetic.main.task_item.view.*
@@ -47,7 +48,7 @@ class GameActivity : AppCompatActivity(), GameListener {
                     .setMessage("Waktu pengerjaan sudah habis.")
                     .setCancelable(false)
                     .setPositiveButton("Lanjut Ke Task berikutnya") { di, _ ->
-                        ServerContactor.startNewTask((selectedTask ?: 0) + 1)
+                        Game.contactor.startNewTask((selectedTask ?: 0) + 1)
                         di.dismiss()
                         onOpenTask((selectedTask ?: 0) + 1)
                         updateButton()
@@ -71,7 +72,7 @@ class GameActivity : AppCompatActivity(), GameListener {
 
     override fun onOpenTask(taskID: Int?) {
         taskID?.let {
-            if (taskID > ServerContactor.tasks.last().taskID) {
+            if (taskID > TASKS.last().taskID) {
                 timer.cancel()
                 alltaskFinished()
             } else {
@@ -83,7 +84,7 @@ class GameActivity : AppCompatActivity(), GameListener {
 
     private fun alltaskFinished() {
         btnStartGame.visibility = View.GONE
-        ServerContactor.finished()
+        Game.contactor.finished()
         AlertDialog.Builder(this)
             .setTitle("All Task Cleared")
             .setCancelable(false)
@@ -97,7 +98,7 @@ class GameActivity : AppCompatActivity(), GameListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
-        ServerContactor.gameDataListener = this
+        Game.contactor.gameDataListener = this
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter
         supportFragmentManager.beginTransaction()
@@ -108,7 +109,7 @@ class GameActivity : AppCompatActivity(), GameListener {
     }
 
     private fun updateButton() {
-        btnStartGame.text = if (selectedTask == ServerContactor.tasks.last().taskID) "FINISH" else "NEXT"
+        btnStartGame.text = if (selectedTask == TASKS.last().taskID) "FINISH" else "NEXT"
     }
 
     private fun initView() {
@@ -116,7 +117,7 @@ class GameActivity : AppCompatActivity(), GameListener {
             timer.cancel()
             if (Game.groupID != null && Game.gameType == GameType.GROUP && Game.isGroupLead()) {
                 // only update when it on group
-                ServerContactor.startNewTask((selectedTask ?: -1) + 1)
+                Game.contactor.startNewTask((selectedTask ?: -1) + 1)
             } else {
                 onOpenTask((selectedTask ?: -1) + 1)
             }
@@ -137,7 +138,7 @@ class GameActivity : AppCompatActivity(), GameListener {
             .setMessage("Are you sure want to close?")
             .setPositiveButton("Ok, Close and Finish") { _, _ ->
                 timer.cancel()
-                ServerContactor.finished()
+                Game.contactor.finished()
                 super.onBackPressed()
             }
             .setNegativeButton("No, Continue Playing") { di, _ ->
@@ -150,10 +151,10 @@ class GameActivity : AppCompatActivity(), GameListener {
             return TaskHolder(LayoutInflater.from(parent.context).inflate(R.layout.task_item, parent, false))
         }
 
-        override fun getItemCount(): Int = ServerContactor.tasks.size
+        override fun getItemCount(): Int = TASKS.size
 
         override fun onBindViewHolder(holder: TaskHolder, position: Int) {
-            holder.bind(ServerContactor.tasks[position])
+            holder.bind(TASKS[position])
         }
 
         inner class TaskHolder(v: View): RecyclerView.ViewHolder(v) {
@@ -175,7 +176,7 @@ class GameActivity : AppCompatActivity(), GameListener {
         e("PLAY", "Opening task $taskID")
         selectedTask = taskID
         loadTask(taskID)
-        val task = ServerContactor.tasks.find { it.taskID == taskID } ?: ServerContactor.tasks.first()
+        val task = TASKS.find { it.taskID == taskID } ?: TASKS.first()
         supportFragmentManager.beginTransaction()
             .replace(R.id.gameContainer, GamePlayFragment.create(task).also {
                 activeFrament = it
@@ -208,7 +209,7 @@ class GameActivity : AppCompatActivity(), GameListener {
     override fun onDestroy() {
         super.onDestroy()
         // destroy listener
-        ServerContactor.gameDataListener = null
+        Game.contactor.gameDataListener = null
         timer.cancel()
     }
 }

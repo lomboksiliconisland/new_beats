@@ -170,3 +170,17 @@ const val CMD_GROUP_GAME =  71
 const val CMD_GAME_SESSION_DATA = 100
 
 const val CMD_START_TASK = 101
+
+const val UDP_PORT = 5657
+
+val TASKS: List<BeatsTask> = listOf(
+    BeatsTask(0, 10, duration = 120000),
+    BeatsTask(1, 10, duration = 120000),
+    BeatsTask(2, 10, duration = 120000),
+    BeatsTask(3, 15, duration = 120000),
+    BeatsTask(4, 15, duration = 120000),
+    BeatsTask(5, 15, duration = 120000),
+    BeatsTask(6, 20, duration = 120000),
+    BeatsTask(7, 20, duration = 120000),
+    BeatsTask(8, 20, duration = 120000)
+)

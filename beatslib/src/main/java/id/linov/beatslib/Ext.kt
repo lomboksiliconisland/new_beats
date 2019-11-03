@@ -7,9 +7,6 @@ import android.R
 import android.content.res.Resources
 import android.content.res.TypedArray
 
-
-
-
 /**
  * Created by Hayi Nukman at 2019-10-18
  * https://github.com/ha-yi

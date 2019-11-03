@@ -10,6 +10,8 @@ import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.material.snackbar.Snackbar
 import id.linov.beats.game.contactor.ServerContactor
+import id.linov.beats.game.contactor.UDPConnector
+import id.linov.beats.game.contactor.UDPContactor
 import id.linov.beats.game.fragments.HomeGameFrag
 import id.linov.beats.game.fragments.UserInfoFrags
 import id.linov.beats.game.fragments.WaitingServerFrags
@@ -32,7 +34,11 @@ class HomeActivity : AppCompatActivity() {
 
     val callback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(p0: String, p1: DiscoveredEndpointInfo) {
-            Snackbar.make(container, "Found BEATS Server, please fill informations", Snackbar.LENGTH_LONG).show()
+            Snackbar.make(
+                container,
+                "Found BEATS Server, please fill informations",
+                Snackbar.LENGTH_LONG
+            ).show()
             if (p0 == Game.serverID && Game.userInformation != null) {
                 tryConnect()
             } else {
@@ -64,7 +70,7 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun tryConnect() {
-        try{
+        try {
             supportFragmentManager.beginTransaction().apply {
                 replace(R.id.container, WaitingServerFrags().apply {
                     text = "Connecting to BEATS server"
@@ -78,10 +84,10 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun awaitConnectToServer() {
-        ServerContactor.connectToServer {
+        Game.contactor.connectToServer {
             startGameActivizty()
-            ServerContactor.getMyUID()
-            ServerContactor.addUser()
+            Game.contactor.getMyUID()
+            Game.contactor.addUser()
         }
     }
 
@@ -99,14 +105,16 @@ class HomeActivity : AppCompatActivity() {
 
     private fun requestPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissions(arrayOf(
-                "android.permission.BLUETOOTH",
-                "android.permission.BLUETOOTH_ADMIN",
-                "android.permission.ACCESS_WIFI_STATE",
-                "android.permission.CHANGE_WIFI_STATE",
-                "android.permission.ACCESS_COARSE_LOCATION",
-                "android.permission.ACCESS_FINE_LOCATION"
-            ), 99)
+            requestPermissions(
+                arrayOf(
+                    "android.permission.BLUETOOTH",
+                    "android.permission.BLUETOOTH_ADMIN",
+                    "android.permission.ACCESS_WIFI_STATE",
+                    "android.permission.CHANGE_WIFI_STATE",
+                    "android.permission.ACCESS_COARSE_LOCATION",
+                    "android.permission.ACCESS_FINE_LOCATION"
+                ), 99
+            )
         }
     }
 
@@ -116,7 +124,7 @@ class HomeActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when(requestCode) {
+        when (requestCode) {
             99 -> {
                 if (grantResults.filter { it == PermissionChecker.PERMISSION_DENIED }.isNotEmpty()) {
                     requestPermission()
@@ -127,20 +135,26 @@ class HomeActivity : AppCompatActivity() {
 
     private fun awaitServer() {
         val discoveryOptions = DiscoveryOptions.Builder().setStrategy(BEATS_STRATEGY).build()
-        ServerContactor.connection?.startDiscovery(SERVICE_ID, callback, discoveryOptions)
-            ?.addOnSuccessListener {
-                e("SUCCESS", "Success founding server...")
+        (Game.contactor as? ServerContactor)?.connection?.startDiscovery(
+            SERVICE_ID,
+            callback,
+            discoveryOptions
+        )?.addOnSuccessListener {
+            e("SUCCESS", "Success founding server...")
+        }?.addOnFailureListener {
+            e("FAILED", "${it}")
+            e("FAILED", "failed to find server retrying in 5 secs...")
+            if (it.message?.contains("STATUS_ALREADY_DISCOVERING") == true) {
+                (Game.contactor as? ServerContactor)?.connection?.stopDiscovery()
             }
-            ?.addOnFailureListener {
-                e("FAILED", "${it}")
-                e("FAILED", "failed to find server retrying in 5 secs...")
-                if(it.message?.contains("STATUS_ALREADY_DISCOVERING") == true) {
-                    ServerContactor.connection?.stopDiscovery()
-                }
-                GlobalScope.async {
-                    Thread.sleep(5000)
-                    awaitServer()
-                }
+            GlobalScope.async {
+                Thread.sleep(5000)
+                awaitServer()
             }
+        }
+
+        (Game.contactor as? UDPContactor)?.let {
+            requestUserInfo()
+        }
     }
 }

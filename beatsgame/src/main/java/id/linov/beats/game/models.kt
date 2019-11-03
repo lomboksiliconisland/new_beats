@@ -2,6 +2,9 @@ package id.linov.beats.game
 
 import com.google.android.gms.nearby.connection.Payload
 import com.google.gson.Gson
+import id.linov.beats.game.contactor.GameContactor
+import id.linov.beats.game.contactor.ServerContactor
+import id.linov.beats.game.contactor.UDPContactor
 import id.linov.beatslib.*
 
 /**
@@ -10,6 +13,7 @@ import id.linov.beatslib.*
  */
 
 object Game {
+    val contactor: GameContactor = UDPContactor()
     var serverID: String? = null
     var userInformation: User? = null
     var gameType: GameType = GameType.PERSONAL

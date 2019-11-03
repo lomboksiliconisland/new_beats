@@ -4,17 +4,15 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.transition.*
-import android.util.Log.ERROR
 import android.util.Log.e
 import android.view.View
-import android.view.animation.TranslateAnimation
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.gms.common.api.Status
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import id.linov.beats.adapters.ClientsAdapter
+import id.linov.beats.udp.UDPHelper
 import id.linov.beatslib.BEATS_STRATEGY
 import id.linov.beatslib.SERVICE_ID
 import id.linov.beatslib.SERVICE_NAME
@@ -111,6 +109,7 @@ class RunServerActivity : AppCompatActivity() {
         if (inputServerName.text.toString().isBlank()) {
             inputServerName.error = "Server name must not be empty"
         }
+        UDPHelper.initReceiver()
         if (!started) {
             startAdvertising()
         } else {
