@@ -73,8 +73,14 @@ class RunServerActivity : AppCompatActivity() {
     }
 
     private fun updateList() {
+        e("PARENT", "UPDATING RECYCLER")
+        e("USER  -=--", " == ${Games.users} ==")
         adapter.notifyDataSetChanged()
         txtParticipanNumber.text = "${Games.users.size} Participant"
+
+        Games.users.forEach {
+            it.value.let { e("USER  ====", "$it") }
+        }
     }
 
     val payloadCallback = object : PayloadCallback() {
@@ -99,10 +105,13 @@ class RunServerActivity : AppCompatActivity() {
             toggle()
         }
         animateButton()
-        Games.init(applicationContext)
 
         rvContent.adapter = adapter
         rvContent.layoutManager = LinearLayoutManager(this)
+        Games.init(applicationContext) {
+            e("PARENT", "setup")
+            updateList()
+        }
     }
 
     private fun toggle() {

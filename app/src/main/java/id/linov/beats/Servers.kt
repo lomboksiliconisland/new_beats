@@ -1,5 +1,6 @@
 package id.linov.beats
 
+import android.util.Log.e
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import retrofit2.Retrofit
@@ -37,6 +38,7 @@ object Servers {
     }
 
     fun addBlock(data: BlockPojo) {
+        e("ADD BLOCK TO SERVER","data $data")
         GlobalScope.async {
             var trrNum = 0
             while (trrNum < 10) {

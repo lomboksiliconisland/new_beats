@@ -37,7 +37,7 @@ class ClientsAdapter : RecyclerView.Adapter<ClientsAdapter.ClientHolder>() {
                 val key = Games.users.keys.toList()[pos]
 
                 Games.users[key]?.let {
-                    txtID.text = key
+                    txtID.text = key.split(".").last()
                     txtID.setBackgroundColor(context.getRandomColor("300"))
                     txtName.text = it.name
                     llProgress.removeAllViews()

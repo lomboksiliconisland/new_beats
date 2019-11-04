@@ -9,11 +9,16 @@ import com.google.android.gms.nearby.connection.Payload
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import id.linov.beatslib.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
 @SuppressLint("StaticFieldLeak")
 object Games {
     var ctx: Context? = null
     var con: ConnectionInfo? = null
+    private var updateListener: (() -> Unit)? = null
 
 
     // group name to list of members
@@ -24,13 +29,15 @@ object Games {
     val gameSessions: MutableMap<String, GameSession> = mutableMapOf()
     val groupSessions: MutableMap<String, GameSession> = mutableMapOf()
 
-    fun init(context: Context) {
+    fun init(context: Context, updateListener: () -> Unit) {
         ctx = context
+        this.updateListener = updateListener
     }
 
     fun handleData(str: String, user: String) {
         e("PAYLOAD", "FROM $user $str")
         val dt = Gson().fromJson<DataShare<Any>>(str, DataShare::class.java)
+
         when (dt?.command) {
             CMD_GAME_DATA -> saveGameData(user, str)
             CMD_CREATE_GROUP -> createGroup(user, str)
@@ -101,9 +108,15 @@ object Games {
     private fun addUser(user: String, str: String) {
         val tp = object : TypeToken<DataShare<User>>() {}.type
         val data = Gson().fromJson<DataShare<User>>(str, tp)
+        e("ADD USER", " $user -- $str --")
+        e("ADD USER", "$data")
         if (data?.data != null) {
             users[user] = data.data.apply {
                 userID = user
+            }
+            e("USERS", "$users")
+            GlobalScope.launch(Dispatchers.Main) {
+                updateListener?.invoke()
             }
         }
     }
@@ -187,8 +200,10 @@ object Games {
  */
 
     private fun saveGameData(user: String, str: String) {
+        e("saveGameData", str)
         val tp = object : TypeToken<DataShare<ActionLog>>() {}.type
         val data = Gson().fromJson<DataShare<ActionLog>>(str, tp)?.data
+        e("saveGameData::type", data?.type.toString())
         if (data != null) {
             when (data.type) {
                 GameType.PERSONAL -> savePersonalGameData(user, data)
@@ -227,7 +242,7 @@ object Games {
     }
 
     private fun savePersonalGameData(user: String, data: ActionLog) {
-        e("PERSONAL GAME DATA", "$user (${data.action.x},${data.action.x})  ${data.action.tile.color}")
+        e("PERSONAL GAME DATA", "$user (${data.action.x},${data.action.y})  ${data.action.tile.color}")
         if (gameSessions[user] == null) {
             handleNewGame(user)
         }
