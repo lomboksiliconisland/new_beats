@@ -9,7 +9,6 @@ import com.google.android.gms.nearby.connection.*
 import com.google.gson.Gson
 import id.linov.beats.game.Game
 import id.linov.beats.game.GroupListener
-import id.linov.beatslib.BeatsTask
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import id.linov.beatslib.*
@@ -20,7 +19,6 @@ import java.lang.Exception
 
 
 class ServerContactor: GameContactor {
-
     var connection: ConnectionsClient? = null
     override var groupListener: GroupListener? = null
     var appContext: Context? = null
@@ -53,22 +51,26 @@ class ServerContactor: GameContactor {
                 data.asBytes()?.let {
                     val str = String(it)
                     e("PAYLOAD", "FROM $user $str")
-                    val dt = Gson().fromJson(str, DataShare::class.java)
-                    when (dt?.command) {
-                        CMD_GET_GROUPS -> handleGroups(user, str)
-                        CMD_GET_CONFIG -> getConfig(user, str)
-                        CMD_GET_MYUID -> hanldeUser(user, str)
-                        CMD_GROUP_GAME -> handleGroupGameData(user, str)
-                        CMD_NEW_GAME -> handleNewGame(user)
-                        CMD_GAME_DATA -> handlePersonalGameData(user, str)
-                        CMD_GROUP_GAME_NEW -> handleOpenGroupGame(str)
-                        CMD_JOIN_GROUP -> handleGroupJoined(str)
-                        CMD_CREATE_GROUP -> handleGroupCreated(str)
-                        CMD_START_TASK -> handleStartTask(str)
-                        CMD_GROUP_NEW_MEMBER -> handleNewMemberJoined(str)
-                    }
+                    handleCommand(user, str)
                 }
             }
+        }
+    }
+
+    override fun handleCommand(from: String, data: String) {
+        val dt = Gson().fromJson(data, DataShare::class.java)
+        when (dt?.command) {
+            CMD_GET_GROUPS -> handleGroups(from, data)
+            CMD_GET_CONFIG -> getConfig(from, data)
+            CMD_GET_MYUID -> hanldeUser(from, data)
+            CMD_GROUP_GAME -> handleGroupGameData(from, data)
+            CMD_NEW_GAME -> handleNewGame(from)
+            CMD_GAME_DATA -> handlePersonalGameData(from, data)
+            CMD_GROUP_GAME_NEW -> handleOpenGroupGame(data)
+            CMD_JOIN_GROUP -> handleGroupJoined(data)
+            CMD_CREATE_GROUP -> handleGroupCreated(data)
+            CMD_START_TASK -> handleStartTask(data)
+            CMD_GROUP_NEW_MEMBER -> handleNewMemberJoined(data)
         }
     }
 

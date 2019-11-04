@@ -2,6 +2,7 @@ package id.linov.beats.udp
 
 import android.util.Log.e
 import id.linov.beats.Games
+import id.linov.beats.Games.getBroadcastAddress
 import id.linov.beatslib.UDP_PORT
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -41,5 +42,10 @@ object UDPHelper {
         val cleanData = data.substring(0, data.lastIndexOf("}") +1)
         e("UDP data", "$cleanData")
         Games.handleData(cleanData, pkg.address.hostAddress)
+    }
+
+    fun sendPayload(bytes: ByteArray?, address: InetAddress = getBroadcastAddress()) {
+        e("SEND UDP", "SEND UDP PACKAGE.... ${address.hostName}")
+        socket.send(DatagramPacket(bytes, bytes?.size ?: 0, address, UDP_PORT))
     }
 }

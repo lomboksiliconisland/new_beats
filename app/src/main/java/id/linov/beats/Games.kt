@@ -2,17 +2,20 @@ package id.linov.beats
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.wifi.WifiManager
 import android.util.Log.e
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.ConnectionInfo
 import com.google.android.gms.nearby.connection.Payload
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import id.linov.beats.udp.UDPHelper
 import id.linov.beatslib.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import java.net.InetAddress
 
 @SuppressLint("StaticFieldLeak")
 object Games {
@@ -32,6 +35,18 @@ object Games {
     fun init(context: Context, updateListener: () -> Unit) {
         ctx = context
         this.updateListener = updateListener
+    }
+
+    fun getBroadcastAddress(): InetAddress {
+        val wifi = ctx?.applicationContext?.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val dhcp = wifi.dhcpInfo
+        // handle null somehow
+
+        val broadcast = dhcp.ipAddress and dhcp.netmask or dhcp.netmask.inv()
+        val quads = ByteArray(4)
+        for (k in 0..3)
+            quads[k] = (broadcast shr k * 8 and 0xFF).toByte()
+        return InetAddress.getByAddress(quads)
     }
 
     fun handleData(str: String, user: String) {
@@ -133,12 +148,16 @@ object Games {
             Nearby.getConnectionsClient(it)
                 .sendPayload(user, DataShare(cmd, data).toPayload())
         }
+        // send udp
+        e("SEND UDP", "SEND UDP PACKAGE.... $user $data")
+        UDPHelper.sendPayload(DataShare(cmd, data).toPayload().asBytes(), InetAddress.getByName(user))
     }
     private fun <T>send(users: List<String>, data: T, cmd: Int) {
         ctx?.let {
             Nearby.getConnectionsClient(it)
                 .sendPayload(users, DataShare(cmd, data).toPayload())
         }
+//        UDPHelper.sendPayload(users, DataShare(cmd, data).toPayload().asBytes())
     }
 
     private fun joinGroup(user: String, str: String) {
@@ -154,6 +173,9 @@ object Games {
             }
         }
         send(user, data, CMD_JOIN_GROUP)
+        GlobalScope.launch(Dispatchers.Main) {
+            updateListener?.invoke()
+        }
     }
 
     private fun getGroups(user: String) {
@@ -179,6 +201,9 @@ object Games {
 
             getGroups(user)
             send(user, data, CMD_CREATE_GROUP)
+        }
+        GlobalScope.launch(Dispatchers.Main) {
+            updateListener?.invoke()
         }
     }
 /*

@@ -2,6 +2,9 @@ package id.linov.beats.game.contactor
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log.e
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import id.linov.beats.game.Game
 import id.linov.beats.game.GameActivity
 import id.linov.beats.game.GroupListener
@@ -14,6 +17,7 @@ import id.linov.beatslib.interfaces.GameListener
  */
 
 class UDPContactor: GameContactor {
+
     override var groupListener: GroupListener? = null
     override var groupData: GroupData? = null
     override var gameDataListener: GameListener? = null
@@ -34,6 +38,7 @@ class UDPContactor: GameContactor {
     }
 
     override fun getMyUID() {
+        connector?.sendPayload(Game.serverID ?: "", DataShare(CMD_GET_MYUID, "").toPayload())
     }
 
     override fun startNewPersonalGame() {
@@ -47,18 +52,39 @@ class UDPContactor: GameContactor {
     }
 
     override fun startNewGroupGame() {
+        connector?.sendPayload(
+            Game.serverID ?: "",
+            DataShare(CMD_GROUP_GAME_NEW, Game.groupID).toPayload()
+        )
     }
 
     override fun joinGroup(selectedGroup: GroupData) {
+        connector?.sendPayload(
+            Game.serverID ?: "",
+            DataShare(CMD_JOIN_GROUP, selectedGroup.name).toPayload()
+        )
     }
 
     override fun createGroup(group: String) {
+        connector?.sendPayload(
+            Game.serverID ?: "",
+            DataShare(CMD_CREATE_GROUP, group).toPayload()
+        )
     }
 
     override fun getGroups() {
+        e("GET GROUP", "getGroupsgetGroupsgetGroupsgetGroupsgetGroups")
+        connector?.sendPayload(
+            Game.serverID ?: "",
+            DataShare(CMD_GET_GROUPS, "").toPayload()
+        )
     }
 
     override fun leaveGroup() {
+        connector?.sendPayload(
+            Game.serverID ?: "",
+            DataShare(CMD_GROUP_LEAVE, "").toPayload()
+        )
     }
 
     override fun sendAction(action: ActionLog) {
@@ -66,6 +92,10 @@ class UDPContactor: GameContactor {
     }
 
     override fun startNewTask(taskID: Int) {
+        connector?.sendPayload(
+            Game.serverID ?: "",
+            DataShare(CMD_START_TASK, GroupTask(Game.groupID?: "", taskID)).toPayload()
+        )
     }
 
     override fun finished() {
@@ -75,4 +105,108 @@ class UDPContactor: GameContactor {
         // since it UDP, assume connected
         onConnect.invoke()
     }
+
+    override fun handleCommand(from: String, data: String) {
+        val dt = Gson().fromJson(data, DataShare::class.java)
+        when (dt?.command) {
+            CMD_GET_GROUPS -> handleGroups(from, data)
+            CMD_GET_CONFIG -> getConfig(from, data)
+            CMD_GET_MYUID -> hanldeUser(from, data)
+            CMD_GROUP_GAME -> handleGroupGameData(from, data)
+            CMD_NEW_GAME -> handleNewGame(from, data)
+            CMD_GAME_DATA -> handlePersonalGameData(from, data)
+            CMD_GROUP_GAME_NEW -> handleOpenGroupGame(from, data)
+            CMD_JOIN_GROUP -> handleGroupJoined(from, data)
+            CMD_CREATE_GROUP -> handleGroupCreated(from, data)
+            CMD_START_TASK -> handleStartTask(from, data)
+            CMD_GROUP_NEW_MEMBER -> handleNewMemberJoined(from, data)
+        }
+    }
+
+    private fun handleNewMemberJoined(from: String, data: String) {
+        val dttp = object : TypeToken<DataShare<List<String>>>() {}.type
+        val mmbrs = Gson().fromJson<DataShare<List<String>>>(data, dttp)?.data
+        mmbrs?.let {
+            groupListener?.onMembers(mmbrs)
+        }
+    }
+
+    private fun handleStartTask(from: String, data: String) {
+        // check if group and from group lead.
+
+        val dttp = object : TypeToken<DataShare<Int>>() {}.type
+        val taskID = Gson().fromJson<DataShare<Int>>(data, dttp)?.data
+        gameDataListener?.onOpenTask(taskID)
+    }
+
+    private fun handleGroupCreated(from: String, data: String) {
+        val dttp = object : TypeToken<DataShare<String>>() {}.type
+        val groupID = Gson().fromJson<DataShare<String>>(data, dttp)?.data
+        Game.groupID = groupID
+        Game.groupLeadID = Game.myID
+    }
+
+    private fun handleGroupJoined(from: String, data: String) {
+        val dttp = object : TypeToken<DataShare<String>>() {}.type
+        val groupID = Gson().fromJson<DataShare<String>>(data, dttp)?.data
+        Game.groupID = groupID
+    }
+
+    private fun handleOpenGroupGame(from: String, data: String) {
+        e("PAYLOAD", "CMD_GROUP_GAME_NEW= ${data}")
+        // check from is from goup lead or not
+        val dttp = object : TypeToken<DataShare<List<String>>>() {}.type
+        val members = Gson().fromJson<DataShare<List<String>>>(data, dttp)?.data
+
+        context?.let {
+            Game.reset(GameType.GROUP)
+            Game.groupMembers = members
+            it.startActivity(Intent(it, GameActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+        }
+    }
+
+    private fun handlePersonalGameData(from: String, data: String) {
+
+    }
+
+    private fun handleNewGame(from: String, data: String) {
+        e("NEW GAME", "New game created :$from")
+//        context?.let {
+//            Game.reset(GameType.PERSONAL)
+//            it.startActivity(Intent(it, GameActivity::class.java).apply {
+//                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+//            })
+//        }
+    }
+
+    private fun handleGroupGameData(from: String, data: String) {
+        if (groupListener != null || groupData == null) {
+            // todo still in group page
+            return
+        }
+        val dttp = object : TypeToken<DataShare<ActionLog>>() {}.type
+        val session = Gson().fromJson<DataShare<ActionLog>>(data, dttp).data
+        gameDataListener?.onGameData(session)
+    }
+
+    private fun hanldeUser(from: String, data: String) {
+        val userID = Gson().fromJson<DataShare<String>>(data, DataShare::class.java).data
+        Game.userInformation?.userID = userID
+    }
+
+    private fun getConfig(from: String, data: String) {
+
+    }
+
+    private fun handleGroups(from: String, str: String) {
+        val dttp = object : TypeToken<DataShare<List<GroupData>>>() {}.type
+        val dt = Gson().fromJson<DataShare<List<GroupData>>>(str, dttp)
+        dt?.data?.forEach {
+            e("RECEIVED FROM SERVER", "name: ${it.name} # members: ${it.members?.joinToString()}")
+        }
+        groupListener?.onData(dt)
+    }
+
 }

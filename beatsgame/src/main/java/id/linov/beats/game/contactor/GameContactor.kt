@@ -35,4 +35,5 @@ interface GameContactor {
     fun finished()
 
     fun connectToServer(onConnect: () -> Unit)
+    fun handleCommand(from: String, data: String)
 }
