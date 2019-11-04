@@ -26,6 +26,8 @@ object Game {
     val myID: String? get() = userInformation?.userID
     var groupMembers: List<String>? = listOf()
 
+    var allGroups: List<GroupData>? = listOf()
+
     fun getColor(color: Colors) : Int {
         return when (color) {
             Colors.R -> R.color.col_r

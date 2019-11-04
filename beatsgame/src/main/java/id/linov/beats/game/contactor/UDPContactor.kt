@@ -124,51 +124,62 @@ class UDPContactor: GameContactor {
     }
 
     private fun handleNewMemberJoined(from: String, data: String) {
-        val dttp = object : TypeToken<DataShare<List<String>>>() {}.type
-        val mmbrs = Gson().fromJson<DataShare<List<String>>>(data, dttp)?.data
-        mmbrs?.let {
-            groupListener?.onMembers(mmbrs)
-        }
+//        val dttp = object : TypeToken<DataShare<List<String>>>() {}.type
+//        val mmbrs = Gson().fromJson<DataShare<List<String>>>(data, dttp)?.data
+//        mmbrs?.let {
+//            groupListener?.onMembers(mmbrs)
+//        }
+        // do nothing...
     }
 
     private fun handleStartTask(from: String, data: String) {
-        // check if group and from group lead.
-
-        val dttp = object : TypeToken<DataShare<Int>>() {}.type
-        val taskID = Gson().fromJson<DataShare<Int>>(data, dttp)?.data
-        gameDataListener?.onOpenTask(taskID)
+        val tp = object : TypeToken<DataShare<GroupTask>>() {}.type
+        Gson().fromJson<DataShare<GroupTask>>(data, tp)?.data?.let { gt ->
+            if (Game.groupID == gt.groupID) {
+                gameDataListener?.onOpenTask(gt.taskID)
+            }
+        }
     }
 
     private fun handleGroupCreated(from: String, data: String) {
-        val dttp = object : TypeToken<DataShare<String>>() {}.type
-        val groupID = Gson().fromJson<DataShare<String>>(data, dttp)?.data
-        Game.groupID = groupID
-        Game.groupLeadID = Game.myID
+//        val dttp = object : TypeToken<DataShare<String>>() {}.type
+//        val groupID = Gson().fromJson<DataShare<String>>(data, dttp)?.data
+//        Game.groupID = groupID
+//        Game.groupLeadID = Game.myID
+        // do nothing
     }
 
     private fun handleGroupJoined(from: String, data: String) {
-        val dttp = object : TypeToken<DataShare<String>>() {}.type
-        val groupID = Gson().fromJson<DataShare<String>>(data, dttp)?.data
-        Game.groupID = groupID
+//        val dttp = object : TypeToken<DataShare<String>>() {}.type
+//        val groupID = Gson().fromJson<DataShare<String>>(data, dttp)?.data
+//        Game.groupID = groupID
+        // do nothing
     }
 
     private fun handleOpenGroupGame(from: String, data: String) {
         e("PAYLOAD", "CMD_GROUP_GAME_NEW= ${data}")
-        // check from is from goup lead or not
-        val dttp = object : TypeToken<DataShare<List<String>>>() {}.type
-        val members = Gson().fromJson<DataShare<List<String>>>(data, dttp)?.data
 
-        context?.let {
-            Game.reset(GameType.GROUP)
-            Game.groupMembers = members
-            it.startActivity(Intent(it, GameActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            })
+        val dttp = object : TypeToken<DataShare<List<String>>>() {}.type
+        val groupID = Gson().fromJson<DataShare<String>>(data, dttp)?.data
+
+        if (Game.groupID == groupID) {
+            context?.let {
+                Game.reset(GameType.GROUP)
+                it.startActivity(Intent(it, GameActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                })
+            }
         }
     }
 
     private fun handlePersonalGameData(from: String, data: String) {
-
+        e("saveGameData", data)
+        val tp = object : TypeToken<DataShare<ActionLog>>() {}.type
+        val data = Gson().fromJson<DataShare<ActionLog>>(data, tp)?.data
+        e("saveGameData::type", data?.type.toString())
+        if (data?.type == GameType.GROUP && data.groupName == Game.groupID) {
+            gameDataListener?.onGameData(data)
+        }
     }
 
     private fun handleNewGame(from: String, data: String) {
@@ -188,7 +199,9 @@ class UDPContactor: GameContactor {
         }
         val dttp = object : TypeToken<DataShare<ActionLog>>() {}.type
         val session = Gson().fromJson<DataShare<ActionLog>>(data, dttp).data
-        gameDataListener?.onGameData(session)
+        if (session.groupName == Game.groupID) {
+            gameDataListener?.onGameData(session)
+        }
     }
 
     private fun hanldeUser(from: String, data: String) {
@@ -206,6 +219,7 @@ class UDPContactor: GameContactor {
         dt?.data?.forEach {
             e("RECEIVED FROM SERVER", "name: ${it.name} # members: ${it.members?.joinToString()}")
         }
+        Game.allGroups = dt?.data
         groupListener?.onData(dt)
     }
 

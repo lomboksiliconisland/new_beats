@@ -85,8 +85,9 @@ object Games {
             } else if (groups[grp]?.leadID == user) {
                 groups[grp]?.leadID = groups[grp]?.members?.firstOrNull() ?: ""
             }
-            send(users.map { it.key }, groups.values.toList(), CMD_GET_GROUPS)
+//            send(users.map { it.key }, groups.values.toList(), CMD_GET_GROUPS)
             users[user]?.groupID = null
+            getGroups(user)
         }
     }
 
@@ -109,6 +110,8 @@ object Games {
             val dts = groups[grpID]?.members?.toList() ?: listOf()
             e("CMD_GROUP_GAME_NEW", "start game on all:  ${dts.joinToString()}")
             Nearby.getConnectionsClient(it).sendPayload(dts, DataShare(CMD_GROUP_GAME_NEW, dts).toPayload())
+
+//            send(user, grpID, CMD_GET_GROUPS)
         }
     }
 
@@ -172,7 +175,8 @@ object Games {
                 send(g.leadID, g.members, CMD_GROUP_NEW_MEMBER)
             }
         }
-        send(user, data, CMD_JOIN_GROUP)
+//        send(user, data, CMD_JOIN_GROUP)
+        getGroups(user)
         GlobalScope.launch(Dispatchers.Main) {
             updateListener?.invoke()
         }
@@ -200,7 +204,7 @@ object Games {
             users[user]?.isGroupOwner = true
 
             getGroups(user)
-            send(user, data, CMD_CREATE_GROUP)
+//            send(user, groups, CMD_CREATE_GROUP)
         }
         GlobalScope.launch(Dispatchers.Main) {
             updateListener?.invoke()
