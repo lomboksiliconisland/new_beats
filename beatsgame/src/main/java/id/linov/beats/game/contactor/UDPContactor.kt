@@ -22,27 +22,27 @@ class UDPContactor: GameContactor {
     override var groupData: GroupData? = null
     override var gameDataListener: GameListener? = null
 
-    var connector: UDPConnector? = null
+    var connector: TCPGameServerContactor? = null
     var context: Context? = null
 
     override fun init(context: Context) {
-        connector = UDPConnector(context)
+        connector = TCPGameServerContactor(context)
         this.context = context
     }
 
     override fun addUser() {
-        connector?.sendPayload(
+        connector?.sendToGameServer(
             "",
             DataShare(CMD_ADD_USER, Game.userInformation).toPayload()
         )
     }
 
     override fun getMyUID() {
-        connector?.sendPayload(Game.serverID ?: "", DataShare(CMD_GET_MYUID, "").toPayload())
+        connector?.sendToGameServer(Game.serverID ?: "", DataShare(CMD_GET_MYUID, "").toPayload())
     }
 
     override fun startNewPersonalGame() {
-        connector?.sendPayload(Game.serverID ?: "", DataShare(CMD_NEW_GAME, "").toPayload())
+        connector?.sendToGameServer(Game.serverID ?: "", DataShare(CMD_NEW_GAME, "").toPayload())
         context?.let {
             Game.reset(GameType.PERSONAL)
             it.startActivity(Intent(it, GameActivity::class.java).apply {
@@ -52,21 +52,21 @@ class UDPContactor: GameContactor {
     }
 
     override fun startNewGroupGame() {
-        connector?.sendPayload(
+        connector?.sendToGameServer(
             Game.serverID ?: "",
             DataShare(CMD_GROUP_GAME_NEW, Game.groupID).toPayload()
         )
     }
 
     override fun joinGroup(selectedGroup: GroupData) {
-        connector?.sendPayload(
+        connector?.sendToGameServer(
             Game.serverID ?: "",
             DataShare(CMD_JOIN_GROUP, selectedGroup.name).toPayload()
         )
     }
 
     override fun createGroup(group: String) {
-        connector?.sendPayload(
+        connector?.sendToGameServer(
             Game.serverID ?: "",
             DataShare(CMD_CREATE_GROUP, group).toPayload()
         )
@@ -74,25 +74,31 @@ class UDPContactor: GameContactor {
 
     override fun getGroups() {
         e("GET GROUP", "getGroupsgetGroupsgetGroupsgetGroupsgetGroups")
-        connector?.sendPayload(
+        connector?.sendToGameServer(
             Game.serverID ?: "",
             DataShare(CMD_GET_GROUPS, "").toPayload()
         )
     }
 
     override fun leaveGroup() {
-        connector?.sendPayload(
+        connector?.sendToGameServer(
             Game.serverID ?: "",
             DataShare(CMD_GROUP_LEAVE, "").toPayload()
         )
     }
 
     override fun sendAction(action: ActionLog) {
-        connector?.sendPayload("", DataShare(CMD_GAME_DATA, action).toPayload())
+        if (action.groupName!= null && action.type == GameType.GROUP) {
+            Game.myGroup?.members?.filter { it != Game.userInformation?.userID }?.forEach {
+               connector?.sendPayload(it, TCP_GAME_CLI_SRV_PORT, DataShare(CMD_GAME_DATA, action).toPayload())
+            }
+        }
+        // also send to server
+        connector?.sendToGameServer("", DataShare(CMD_GAME_DATA, action).toPayload())
     }
 
     override fun startNewTask(taskID: Int) {
-        connector?.sendPayload(
+        connector?.sendToGameServer(
             Game.serverID ?: "",
             DataShare(CMD_START_TASK, GroupTask(Game.groupID?: "", taskID)).toPayload()
         )
@@ -133,11 +139,11 @@ class UDPContactor: GameContactor {
     }
 
     private fun handleStartTask(from: String, data: String) {
-        val tp = object : TypeToken<DataShare<GroupTask>>() {}.type
-        Gson().fromJson<DataShare<GroupTask>>(data, tp)?.data?.let { gt ->
-            if (Game.groupID == gt.groupID) {
-                gameDataListener?.onOpenTask(gt.taskID)
-            }
+        val tp = object : TypeToken<DataShare<Int>>() {}.type
+        Gson().fromJson<DataShare<Int>>(data, tp)?.data?.let { gt ->
+//            if (Game.groupID == gt.groupID) {
+                gameDataListener?.onOpenTask(gt)
+//            }
         }
     }
 
@@ -159,7 +165,7 @@ class UDPContactor: GameContactor {
     private fun handleOpenGroupGame(from: String, data: String) {
         e("PAYLOAD", "CMD_GROUP_GAME_NEW= ${data}")
 
-        val dttp = object : TypeToken<DataShare<List<String>>>() {}.type
+        val dttp = object : TypeToken<DataShare<String>>() {}.type
         val groupID = Gson().fromJson<DataShare<String>>(data, dttp)?.data
 
         if (Game.groupID == groupID) {
@@ -205,8 +211,8 @@ class UDPContactor: GameContactor {
     }
 
     private fun hanldeUser(from: String, data: String) {
-        val userID = Gson().fromJson<DataShare<String>>(data, DataShare::class.java).data
-        Game.userInformation?.userID = userID
+//        val userID = Gson().fromJson<DataShare<String>>(data, DataShare::class.java).data
+//        Game.userInformation?.userID = userID
     }
 
     private fun getConfig(from: String, data: String) {
@@ -220,6 +226,8 @@ class UDPContactor: GameContactor {
             e("RECEIVED FROM SERVER", "name: ${it.name} # members: ${it.members?.joinToString()}")
         }
         Game.allGroups = dt?.data
+        Game.myGroup = Game.allGroups?.filter { it.members?.contains(Game.userInformation?.userID) == true }?.firstOrNull()
+
         groupListener?.onData(dt)
     }
 

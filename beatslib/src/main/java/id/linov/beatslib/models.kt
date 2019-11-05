@@ -154,6 +154,7 @@ fun getColorName(c: Colors): String {
     }
 }
 
+const val CMD_SERVER_IP = -1
 const val CMD_NEW_GAME = 0
 const val CMD_GAME_DATA = 1
 const val CMD_ADD_USER = 2
@@ -171,7 +172,9 @@ const val CMD_GAME_SESSION_DATA = 100
 
 const val CMD_START_TASK = 101
 
-const val UDP_PORT = 5657
+const val UDP_PORT = 9099
+const val TCP_PORT = 8689
+const val TCP_GAME_CLI_SRV_PORT = 8688
 
 val TASKS: List<BeatsTask> = listOf(
     BeatsTask(0, 10, duration = 120000),

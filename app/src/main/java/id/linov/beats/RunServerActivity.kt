@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.transition.*
 import android.util.Log.e
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -20,16 +21,6 @@ import id.linov.beatslib.User
 import kotlinx.android.synthetic.main.activity_run_server.*
 
 class RunServerActivity : AppCompatActivity() {
-    /**
-     * TODO
-     * 1. Create Group Mechanism
-     * 1.1. Automatic Group Mechanism (random pairing)
-     * 1.2. Manual Paired group (PRIORITY)
-     * 2. Start Personal Test Session
-     * 3. Start Group Test Session
-     * 4. Sync to Server (create new server pls)
-     * 5. Group Test config (max player in a group)
-     */
 
     var started = false
     var progressing = false
@@ -73,14 +64,14 @@ class RunServerActivity : AppCompatActivity() {
     }
 
     private fun updateList() {
-        e("PARENT", "UPDATING RECYCLER")
-        e("USER  -=--", " == ${Games.users} ==")
+//        e("PARENT", "UPDATING RECYCLER")
+//        e("USER  -=--", " == ${Games.users} ==")
         adapter.notifyDataSetChanged()
         txtParticipanNumber.text = "${Games.users.size} Participant"
 
-        Games.users.forEach {
-            it.value.let { e("USER  ====", "$it") }
-        }
+//        Games.users.forEach {
+//            it.value.let { e("USER  ====", "$it") }
+//        }
     }
 
     val payloadCallback = object : PayloadCallback() {
@@ -118,11 +109,21 @@ class RunServerActivity : AppCompatActivity() {
         if (inputServerName.text.toString().isBlank()) {
             inputServerName.error = "Server name must not be empty"
         }
-        UDPHelper.initReceiver()
-        if (!started) {
+        if (btToggleService.text == "START") {
+            UDPHelper.initReceiver()
+            Games.clearAll()
             startAdvertising()
         } else {
-            stopAdvertise()
+            AlertDialog.Builder(this)
+                .setTitle("Clear all data?")
+                .setMessage("WARNING: Clearing all data will resulting all game progress will be unsaved.")
+                .setPositiveButton("Clear") { dialog, _ ->
+                    Games.clearAll()
+                    updateList()
+                    dialog.dismiss()
+                }.setNegativeButton("Cancle") {di, _ ->
+                    di.dismiss()
+                }.show()
         }
     }
 
@@ -133,37 +134,15 @@ class RunServerActivity : AppCompatActivity() {
     }
 
     private fun startAdvertising() {
-        val ao = AdvertisingOptions.Builder().setStrategy(BEATS_STRATEGY).build()
-        progressing = true
+//        val ao = AdvertisingOptions.Builder().setStrategy(BEATS_STRATEGY).build()
+        started = true
+        progressing = false
         animateButton()
-        Nearby.getConnectionsClient(this)
-            .startAdvertising(SERVICE_NAME, SERVICE_ID, callback, ao)
-            .addOnSuccessListener {
-                e("SUCCESS", "addOnSuccessListener")
-                started = true
-                progressing = false
-                animateButton()
-            }
-            .addOnCanceledListener {
-                e("ERROR", "addOnCanceledListener")
-                started = false
-                progressing = false
-                animateButton()
-            }
-            .addOnFailureListener {
-                e("ERROR", "addOnFailureListener ${it.toString()}")
-                started = false
-                progressing = false
-                if (it.message?.contains("STATUS_ALREADY_ADVERTISING") == true) {
-                    started = true
-                }
-                animateButton()
-            }
     }
 
     private fun animateButton() {
         val bg = if (started) R.color.colorAccent else R.color.colorPrimary
-        val text = if (started) "STOP" else "START"
+        val text = if (started) "CLEAN" else "START"
         progress.visibility = if (progressing) View.VISIBLE else View.GONE
 
         btToggleService.setBackgroundColor(ContextCompat.getColor(this, bg))

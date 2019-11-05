@@ -87,7 +87,6 @@ class GamePlayFragment: Fragment() {
                     Game.taskActions = mutableMapOf()
                     Game.actions = mutableListOf()
                     gameUI.invalidate()
-//                    ServerContactor.startNewPersonalGame()
                     di.dismiss()
                 }
                 .setNegativeButton("Cancel") { di, _ ->

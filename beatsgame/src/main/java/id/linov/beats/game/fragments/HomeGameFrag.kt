@@ -20,6 +20,8 @@ import id.linov.beats.game.contactor.ServerContactor
  */
 
 class HomeGameFrag: Fragment() {
+    var callback: (() -> Unit)? = null
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -35,6 +37,12 @@ class HomeGameFrag: Fragment() {
         llPersonal.setOnClickListener {
             startPersonalTest()
         }
+
+        btnChangeUser.setOnClickListener {
+            callback?.invoke()
+        }
+
+        txtStatus.text = "User ${Game.userInformation?.name} - connected to server : ${Game.tcpServerIP}"
     }
 
     override fun onResume() {

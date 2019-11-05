@@ -62,6 +62,7 @@ class GroupActivity : AppCompatActivity(), GroupListener, GameListener {
                     selectedGroup = g
                     Game.groupID = g.name
                     Game.groupLeadID = g.leadID
+                    Game.myGroup = g
                     return
                 }
             }

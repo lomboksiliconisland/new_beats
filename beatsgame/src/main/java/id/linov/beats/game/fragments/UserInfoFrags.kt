@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import id.linov.beats.game.R
 import id.linov.beatslib.User
 import kotlinx.android.synthetic.main.fragment_user_info.*
+import id.linov.beats.game.Game
 
 /**
  * Created by Hayi Nukman at 2019-10-19
@@ -38,23 +39,24 @@ class UserInfoFrags: Fragment() {
             inputNama.error = "nama tidak boleh kosong"
             return
         }
-
-        if (inputGender.text.toString().isBlank()) {
-            inputNama.error = "Gender tidak boleh kosong"
-            return
-        }
-
-        if (inputUsia.text.toString().isBlank()) {
-            inputNama.error = "Usia tidak boleh kosong"
-            return
-        }
+//
+//        if (inputGender.text.toString().isBlank()) {
+//            inputGender.error = "Gender tidak boleh kosong"
+//            return
+//        }
+//
+//        if (inputUsia.text.toString().isBlank()) {
+//            inputUsia.error = "Usia tidak boleh kosong"
+//            return
+//        }
 
         val us = User(
             inputNama.text.toString(),
             inputEmail.text.toString(),
             inputGender.text.toString(),
             inputUsia.text.toString().toIntOrNull(),
-            null
+            null,
+            userID = Game.getIPAddress()
         )
         callback?.invoke(us)
     }

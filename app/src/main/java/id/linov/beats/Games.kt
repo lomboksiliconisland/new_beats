@@ -16,9 +16,16 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.net.InetAddress
+import android.text.format.Formatter
+import android.util.Base64
+import id.linov.beats.server.TCPServer
+import id.linov.beatslib.GameSession
+import id.linov.beatslib.GroupData
+
 
 @SuppressLint("StaticFieldLeak")
 object Games {
+    var serverUUID: String? = null
     var ctx: Context? = null
     var con: ConnectionInfo? = null
     private var updateListener: (() -> Unit)? = null
@@ -35,6 +42,15 @@ object Games {
     fun init(context: Context, updateListener: () -> Unit) {
         ctx = context
         this.updateListener = updateListener
+        val base64 = Base64.encode(System.currentTimeMillis().toString().toByteArray(), Base64.DEFAULT)
+        serverUUID = String(base64)
+    }
+
+    fun getIPAddress(): String {
+        val wifi = ctx?.applicationContext?.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val ip = wifi.connectionInfo.ipAddress
+
+        return Formatter.formatIpAddress(ip)
     }
 
     fun getBroadcastAddress(): InetAddress {
@@ -80,7 +96,7 @@ object Games {
         val grp = users[user]?.groupID
         grp?.let {
             groups[grp]?.members?.remove(user)
-            if (groups[grp]?.members.isNullOrEmpty()){
+            if (groups[grp]?.members.isNullOrEmpty()) {
                 groups.remove(grp)
             } else if (groups[grp]?.leadID == user) {
                 groups[grp]?.leadID = groups[grp]?.members?.firstOrNull() ?: ""
@@ -94,10 +110,9 @@ object Games {
     private fun broadcastTaskID(user: String, str: String) {
         val tp = object : TypeToken<DataShare<GroupTask>>() {}.type
         val grpTask = Gson().fromJson<DataShare<GroupTask>>(str, tp)?.data
-        grpTask?.let {
-            val dts = groups[it.groupID]?.members?.toList() ?: listOf()
-            ctx?.let {ctx ->
-                Nearby.getConnectionsClient(ctx).sendPayload(dts, DataShare(CMD_START_TASK, it.taskID).toPayload())
+        grpTask?.let { task ->
+            groups[task.groupID]?.members?.toList()?.forEach {
+                send(it, task.taskID , CMD_START_TASK)
             }
         }
     }
@@ -106,21 +121,28 @@ object Games {
         e("CMD_GROUP_GAME_NEW", "Start game $user")
         val tp = object : TypeToken<DataShare<String>>() {}.type
         val grpID = Gson().fromJson<DataShare<String>>(str, tp).data
-        ctx?.let {
-            val dts = groups[grpID]?.members?.toList() ?: listOf()
-            e("CMD_GROUP_GAME_NEW", "start game on all:  ${dts.joinToString()}")
-            Nearby.getConnectionsClient(it).sendPayload(dts, DataShare(CMD_GROUP_GAME_NEW, dts).toPayload())
-
-//            send(user, grpID, CMD_GET_GROUPS)
+        groups[grpID]?.members?.toList()?.forEach {
+            send(it, grpID, CMD_GROUP_GAME_NEW)
         }
+
+//        ctx?.let {
+//            val dts = groups[grpID]?.members?.toList() ?: listOf()
+//            e("CMD_GROUP_GAME_NEW", "start game on all:  ${dts.joinToString()}")
+//            Nearby.getConnectionsClient(it).sendPayload(dts, DataShare(CMD_GROUP_GAME_NEW, dts).toPayload())
+//
+//
+////            send(user, grpID, CMD_GET_GROUPS)
+//        }
     }
 
     private fun handleNewGame(user: String) {
         // force replace game session.
-        gameSessions[user] = GameSession(user, GameType.PERSONAL, startTime = System.currentTimeMillis())
-        ctx?.let {
-            Nearby.getConnectionsClient(it).sendPayload(user, DataShare(CMD_NEW_GAME, user).toPayload())
-        }
+        gameSessions[user] =
+            GameSession(user, GameType.PERSONAL, startTime = System.currentTimeMillis())
+//        ctx?.let {
+//            Nearby.getConnectionsClient(it).sendPayload(user, DataShare(CMD_NEW_GAME, user).toPayload())
+//        }
+        send(user, user, CMD_NEW_GAME)
     }
 
     private fun addUser(user: String, str: String) {
@@ -140,27 +162,15 @@ object Games {
     }
 
     private fun handleGetUID(user: String) {
-        ctx?.let {
-            Nearby.getConnectionsClient(it)
-                .sendPayload(user, DataShare(CMD_GET_MYUID, user).toPayload())
-        }
+//        ctx?.let {
+//            Nearby.getConnectionsClient(it)
+//                .sendPayload(user, DataShare(CMD_GET_MYUID, user).toPayload())
+//        }
     }
 
-    private fun <T>send(user: String, data: T, cmd: Int) {
-        ctx?.let {
-            Nearby.getConnectionsClient(it)
-                .sendPayload(user, DataShare(cmd, data).toPayload())
-        }
-        // send udp
-        e("SEND UDP", "SEND UDP PACKAGE.... $user $data")
-        UDPHelper.sendPayload(DataShare(cmd, data).toPayload().asBytes(), InetAddress.getByName(user))
-    }
-    private fun <T>send(users: List<String>, data: T, cmd: Int) {
-        ctx?.let {
-            Nearby.getConnectionsClient(it)
-                .sendPayload(users, DataShare(cmd, data).toPayload())
-        }
-//        UDPHelper.sendPayload(users, DataShare(cmd, data).toPayload().asBytes())
+    private fun <T> send(user: String, data: T, cmd: Int) {
+        e("SEND DATA", "SEND UDP PACKAGE.... $user $data")
+        TCPServer.sendToClient(user, DataShare(cmd, data))
     }
 
     private fun joinGroup(user: String, str: String) {
@@ -175,7 +185,6 @@ object Games {
                 send(g.leadID, g.members, CMD_GROUP_NEW_MEMBER)
             }
         }
-//        send(user, data, CMD_JOIN_GROUP)
         getGroups(user)
         GlobalScope.launch(Dispatchers.Main) {
             updateListener?.invoke()
@@ -183,7 +192,10 @@ object Games {
     }
 
     private fun getGroups(user: String) {
-        send(user, groups.values.toList(), CMD_GET_GROUPS)
+        // notify all clients
+        users.forEach {
+            send(it.key, groups.values.toList(), CMD_GET_GROUPS)
+        }
     }
 
     private fun createGroup(user: String, str: String) {
@@ -204,29 +216,11 @@ object Games {
             users[user]?.isGroupOwner = true
 
             getGroups(user)
-//            send(user, groups, CMD_CREATE_GROUP)
         }
         GlobalScope.launch(Dispatchers.Main) {
             updateListener?.invoke()
         }
     }
-/*
-    private fun saveGameData(user: String, str: String) {
-        val tp = object : TypeToken<DataShare<GameData>>() {}.type
-        val data = Gson().fromJson<DataShare<GameData>>(str, tp)?.data
-        if (data != null) {
-            if (data.actions.isNullOrEmpty()) {
-                // reset data.
-                personalData[user] = mutableMapOf()
-            } else {
-                if (personalData[user] == null) {
-                    personalData[user] = mutableMapOf()
-                }
-                personalData[user]?.put(data.taskID, data.actions)
-            }
-        }
-    }
- */
 
     private fun saveGameData(user: String, str: String) {
         e("saveGameData", str)
@@ -252,14 +246,12 @@ object Games {
                 )
             }
             groupSessions[groupID]?.saveActionLog(data)
-            ctx?.let {
-                val dts = groups[groupID]?.members?.toList() ?: listOf()
-                // broadcast update to all group members
-                Nearby.getConnectionsClient(it).sendPayload(dts, DataShare(CMD_GROUP_GAME, data).toPayload())
-            }
+//            groups[groupID]?.members?.toList()?.forEach {
+//                send(it, data, CMD_GROUP_GAME)
+//            }
 
             Servers.addBlock(BlockPojo().apply {
-                assessmentId = "G_${groupID}"
+                assessmentId = "G-${serverUUID}-${groupID}"
                 taskId = data.taskID.toString()
                 color = getColorName(data.action.tile.color)
                 timestamp = data.action.tile.timestamp.toString()
@@ -271,13 +263,12 @@ object Games {
     }
 
     private fun savePersonalGameData(user: String, data: ActionLog) {
-        e("PERSONAL GAME DATA", "$user (${data.action.x},${data.action.y})  ${data.action.tile.color}")
         if (gameSessions[user] == null) {
             handleNewGame(user)
         }
         gameSessions[user]?.saveActionLog(data)
         Servers.addBlock(BlockPojo().apply {
-            assessmentId = "P_${user}_${users[user]?.name}"
+            assessmentId = "P-${serverUUID}-${user}_${users[user]?.name}"
             taskId = data.taskID.toString()
             color = getColorName(data.action.tile.color)
             timestamp = data.action.tile.timestamp.toString()
@@ -285,5 +276,13 @@ object Games {
             pos_y = data.action.y.toString()
             username = users[user]?.name ?: user
         })
+    }
+
+    fun clearAll() {
+        groups.clear()
+        personalData.clear()
+        users.clear()
+        gameSessions.clear()
+        groupSessions.clear()
     }
 }

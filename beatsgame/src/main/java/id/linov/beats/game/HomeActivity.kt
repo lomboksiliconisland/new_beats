@@ -1,16 +1,14 @@
 package id.linov.beats.game
 
-import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log.e
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.PermissionChecker
-import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.material.snackbar.Snackbar
 import id.linov.beats.game.contactor.ServerContactor
-import id.linov.beats.game.contactor.UDPConnector
 import id.linov.beats.game.contactor.UDPContactor
 import id.linov.beats.game.fragments.HomeGameFrag
 import id.linov.beats.game.fragments.UserInfoFrags
@@ -27,7 +25,19 @@ class HomeActivity : AppCompatActivity() {
 
     private fun startGameActivizty() {
         supportFragmentManager.beginTransaction().apply {
-            replace(R.id.container, HomeGameFrag())
+            replace(R.id.container, HomeGameFrag().apply {
+                callback = {
+                    AlertDialog.Builder(this@HomeActivity)
+                        .setTitle("CHANGE PARTICIPANT INFORMATION")
+                        .setMessage("WARNING: Changing user information will result on loss all progress.")
+                        .setPositiveButton("Ok, Change it.") { di, _ ->
+                            requestUserInfo()
+                            di.dismiss()
+                        }.setNegativeButton("No.") { di, _ ->
+                            di.dismiss()
+                        }.show()
+                }
+            })
             commitAllowingStateLoss()
         }
     }

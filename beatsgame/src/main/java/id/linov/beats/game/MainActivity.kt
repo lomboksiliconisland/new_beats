@@ -6,6 +6,7 @@ import android.os.Handler
 import androidx.core.os.HandlerCompat
 import com.google.android.gms.nearby.Nearby
 import id.linov.beats.game.contactor.ServerContactor
+import id.linov.beats.game.contactor.UDPBroadcastListener
 import id.linov.beatslib.startAct
 
 class MainActivity : AppCompatActivity() {
@@ -14,6 +15,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         Game.contactor.init(applicationContext)
+        UDPBroadcastListener.startListen()
         HandlerCompat.postDelayed(Handler(), {
             startAct(HomeActivity::class.java)
             finish()

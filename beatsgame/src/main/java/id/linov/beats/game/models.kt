@@ -1,5 +1,9 @@
 package id.linov.beats.game
 
+import android.app.Application
+import android.content.Context
+import android.net.wifi.WifiManager
+import android.text.format.Formatter
 import com.google.android.gms.nearby.connection.Payload
 import com.google.gson.Gson
 import id.linov.beats.game.contactor.GameContactor
@@ -13,6 +17,8 @@ import id.linov.beatslib.*
  */
 
 object Game {
+    var tcpServerIP: String? = null
+    var lastServerUptime: Long? = null
     val contactor: GameContactor = UDPContactor()
     var serverID: String? = null
     var userInformation: User? = null
@@ -25,8 +31,23 @@ object Game {
     var groupLeadID: String? = ""
     val myID: String? get() = userInformation?.userID
     var groupMembers: List<String>? = listOf()
+    var application: Application? = null
+
+    var myGroup: GroupData? = null
 
     var allGroups: List<GroupData>? = listOf()
+
+    fun initApp(application: Application) {
+        this.application = application
+        getIPAddress()
+    }
+
+    fun getIPAddress(): String {
+        val wifi = application?.applicationContext?.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val ip = wifi.connectionInfo.ipAddress
+
+        return Formatter.formatIpAddress(ip)
+    }
 
     fun getColor(color: Colors) : Int {
         return when (color) {
