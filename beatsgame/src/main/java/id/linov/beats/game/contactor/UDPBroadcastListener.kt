@@ -68,7 +68,7 @@ object UDPBroadcastListener {
 //    }
 
     fun startListen() {
-        e("LISTEN UDP", "LISTEN UDP BROADCAST")
+//        e("LISTEN UDP", "LISTEN UDP BROADCAST")
         GlobalScope.async {
             while (true) {
                 listenUDPPackage()
@@ -85,7 +85,7 @@ object UDPBroadcastListener {
         broadcastSocket.receive(pkg)
         val data = String(pkg.data)
         val cleanData = data.substring(0, data.lastIndexOf("}") +1)
-        e("UDP data from other", "${pkg.address.hostAddress}: $cleanData")
+//        e("UDP data from other", "${pkg.address.hostAddress}: $cleanData")
         val dt = Gson().fromJson(cleanData, DataShare::class.java)
 
         if (dt.command == CMD_SERVER_IP) {

@@ -89,7 +89,7 @@ class GamePlayFragment: Fragment() {
                     gameUI.invalidate()
                     di.dismiss()
                 }
-                .setNegativeButton("Cancel") { di, _ ->
+                .setNegativeButton("Batal") { di, _ ->
                     di.dismiss()
                 }.show()
         }

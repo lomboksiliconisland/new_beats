@@ -28,12 +28,12 @@ class HomeActivity : AppCompatActivity() {
             replace(R.id.container, HomeGameFrag().apply {
                 callback = {
                     AlertDialog.Builder(this@HomeActivity)
-                        .setTitle("CHANGE PARTICIPANT INFORMATION")
-                        .setMessage("WARNING: Changing user information will result on loss all progress.")
-                        .setPositiveButton("Ok, Change it.") { di, _ ->
+                        .setTitle("Ganti Peserta")
+                        .setMessage("WARNING: Mengganti informasi akan membuat task peserta saat ini dianggap selesai.")
+                        .setPositiveButton("Ok, Ganti") { di, _ ->
                             requestUserInfo()
                             di.dismiss()
-                        }.setNegativeButton("No.") { di, _ ->
+                        }.setNegativeButton("Batal.") { di, _ ->
                             di.dismiss()
                         }.show()
                 }

@@ -23,11 +23,11 @@ class TCPGameServerContactor(context: Context) {
 
     fun sendPayload(s: String?, port: Int, payload: Payload) {
         GlobalScope.async {
-            e("SEND PAYLOAD TO SERVER", "RECEIVER IP $s:$port")
+//            e("SEND PAYLOAD TO SERVER", "RECEIVER IP $s:$port")
             val server = Socket(s, port)
             var error = false
             try {
-                e("SEND PAYLOAD", String(payload.asBytes()?: byteArrayOf()))
+//                e("SEND PAYLOAD", String(payload.asBytes()?: byteArrayOf()))
                 val os = server.getOutputStream()
                 val bytes = payload.asBytes() ?: byteArrayOf()
                 os.write(bytes)

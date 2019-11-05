@@ -35,17 +35,12 @@ object GameTileServer {
         }
         GlobalScope.async {
             while (!stopped) {
-                e("TCP SERVER", "======= START TCP SERVER ======")
                 try {
                     val socket = server.accept()
                     val addr = socket.inetAddress.hostAddress
-                    val port = socket.port
-                    val output = PrintWriter(socket.getOutputStream())
                     val input = BufferedReader(InputStreamReader(socket.getInputStream()))
                     val data = input.readLine()
-                    e("TCP SERVER", "received from $addr port: $port --> $data")
                     val cleanData = data.substring(0, data.lastIndexOf("}") + 1)
-                    e("TCP SERVER", "$cleanData")
                     GlobalScope.launch(Dispatchers.Main) {
                         Game.contactor.handleCommand(addr, cleanData)
                     }

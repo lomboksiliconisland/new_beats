@@ -80,7 +80,7 @@ class GroupActivity : AppCompatActivity(), GroupListener, GameListener {
         }
 
         btnNewGroup.setOnClickListener {
-            if (btnNewGroup.text.toString().toLowerCase() == "NEW Group".toLowerCase()) {
+            if (btnNewGroup.text.toString().toLowerCase() == "Group Baru".toLowerCase()) {
                 inputGN.visibility = View.VISIBLE
                 btnNewGroup.text = "Create Group"
             } else if (!inputGN.text.isNullOrBlank()) {
@@ -179,19 +179,19 @@ class GroupActivity : AppCompatActivity(), GroupListener, GameListener {
 
         if (isLead()) {
             btnNewGroup.visibility = View.GONE
-            btnPlay.text = "Start Game"
+            btnPlay.text = "MULAI"
             btnPlay.visibility = View.VISIBLE
-            txtStatus.text = "You are the lead in this group"
+            txtStatus.text = "Anda adalah Group leader di permainan ini"
         } else if (isJoined()) {
             btnNewGroup.visibility = View.GONE
-            btnPlay.text = "Leave Group"
+            btnPlay.text = "Keluar dari Group"
             btnPlay.visibility = View.VISIBLE
-            txtStatus.text = "You are have join this group"
+            txtStatus.text = "anda telah bergabung dalam group ini"
         } else {
             btnPlay.visibility = View.GONE
-            txtStatus.text = "You have't join any group yet. Select Group on left side"
+            txtStatus.text = "Anda belum join group. Pilih join group di sebelah kiri."
             btnNewGroup.visibility = View.VISIBLE
-            btnNewGroup.text = "NEW Group"
+            btnNewGroup.text = "Group Baru"
         }
     }
 

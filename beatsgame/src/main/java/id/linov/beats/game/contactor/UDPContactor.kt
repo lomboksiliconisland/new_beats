@@ -73,7 +73,6 @@ class UDPContactor: GameContactor {
     }
 
     override fun getGroups() {
-        e("GET GROUP", "getGroupsgetGroupsgetGroupsgetGroupsgetGroups")
         connector?.sendToGameServer(
             Game.serverID ?: "",
             DataShare(CMD_GET_GROUPS, "").toPayload()
@@ -163,7 +162,7 @@ class UDPContactor: GameContactor {
     }
 
     private fun handleOpenGroupGame(from: String, data: String) {
-        e("PAYLOAD", "CMD_GROUP_GAME_NEW= ${data}")
+//        e("PAYLOAD", "CMD_GROUP_GAME_NEW= ${data}")
 
         val dttp = object : TypeToken<DataShare<String>>() {}.type
         val groupID = Gson().fromJson<DataShare<String>>(data, dttp)?.data
@@ -179,17 +178,17 @@ class UDPContactor: GameContactor {
     }
 
     private fun handlePersonalGameData(from: String, data: String) {
-        e("saveGameData", data)
+//        e("saveGameData", data)
         val tp = object : TypeToken<DataShare<ActionLog>>() {}.type
         val data = Gson().fromJson<DataShare<ActionLog>>(data, tp)?.data
-        e("saveGameData::type", data?.type.toString())
+//        e("saveGameData::type", data?.type.toString())
         if (data?.type == GameType.GROUP && data.groupName == Game.groupID) {
             gameDataListener?.onGameData(data)
         }
     }
 
     private fun handleNewGame(from: String, data: String) {
-        e("NEW GAME", "New game created :$from")
+//        e("NEW GAME", "New game created :$from")
 //        context?.let {
 //            Game.reset(GameType.PERSONAL)
 //            it.startActivity(Intent(it, GameActivity::class.java).apply {
@@ -222,9 +221,9 @@ class UDPContactor: GameContactor {
     private fun handleGroups(from: String, str: String) {
         val dttp = object : TypeToken<DataShare<List<GroupData>>>() {}.type
         val dt = Gson().fromJson<DataShare<List<GroupData>>>(str, dttp)
-        dt?.data?.forEach {
-            e("RECEIVED FROM SERVER", "name: ${it.name} # members: ${it.members?.joinToString()}")
-        }
+//        dt?.data?.forEach {
+//            e("RECEIVED FROM SERVER", "name: ${it.name} # members: ${it.members?.joinToString()}")
+//        }
         Game.allGroups = dt?.data
         Game.myGroup = Game.allGroups?.filter { it.members?.contains(Game.userInformation?.userID) == true }?.firstOrNull()
 

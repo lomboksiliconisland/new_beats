@@ -40,7 +40,7 @@ class GameActivity : AppCompatActivity(), GameListener {
         activeFrament?.onGameData(data)
     }
 
-    private var timer = object: CountDownTimer(120000, 1000) {
+    private var timer = object : CountDownTimer(120000, 1000) {
         override fun onFinish() {
             if (Game.isGroupLead()) {
                 AlertDialog.Builder(this@GameActivity)
@@ -66,7 +66,8 @@ class GameActivity : AppCompatActivity(), GameListener {
                 millisUntilFinished > 10000 -> txtTimer.setTextColor(Color.parseColor("#ff6d00"))
                 else -> txtTimer.setTextColor(Color.RED)
             }
-            txtTimer.text = "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+            txtTimer.text =
+                "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
         }
     }
 
@@ -86,9 +87,9 @@ class GameActivity : AppCompatActivity(), GameListener {
         btnStartGame.visibility = View.GONE
         Game.contactor.finished()
         AlertDialog.Builder(this)
-            .setTitle("All Task Cleared")
+            .setTitle("Semua Task Cleared")
             .setCancelable(false)
-            .setMessage("Great, Semua task sudah berhasil kamu selesaikan.")
+            .setMessage("Hebat, Semua task sudah berhasil di selesaikan.")
             .setPositiveButton("Tutup") { di, _ ->
                 di.dismiss()
                 finish()
@@ -114,14 +115,22 @@ class GameActivity : AppCompatActivity(), GameListener {
 
     private fun initView() {
         btnStartGame.setOnClickListener {
-            timer.cancel()
-            if (Game.groupID != null && Game.gameType == GameType.GROUP && Game.isGroupLead()) {
-                // only update when it on group
-                Game.contactor.startNewTask((selectedTask ?: -1) + 1)
-            } else {
-                onOpenTask((selectedTask ?: -1) + 1)
-            }
-            updateButton()
+            AlertDialog.Builder(this)
+                .setTitle("Mulai Task Baru?")
+                .setMessage("Mulai task baru?")
+                .setPositiveButton("OK, Mulai") { di, _ ->
+                    timer.cancel()
+                    if (Game.groupID != null && Game.gameType == GameType.GROUP && Game.isGroupLead()) {
+                        // only update when it on group
+                        Game.contactor.startNewTask((selectedTask ?: -1) + 1)
+                    } else {
+                        onOpenTask((selectedTask ?: -1) + 1)
+                    }
+                    updateButton()
+                    di.dismiss()
+                }.setNegativeButton("Batal") { di, _ ->
+                    di.dismiss()
+                }.show()
         }
         val vis = if (Game.isGroupLead()) {
             View.VISIBLE
@@ -130,25 +139,32 @@ class GameActivity : AppCompatActivity(), GameListener {
         }
         btnStartGame.visibility = vis
         btnEndGame.visibility = vis
-        txtTitle.text = if (Game.gameType == GameType.PERSONAL) "PERSONAL" else "GROUP ${Game.groupID}"
+        txtTitle.text =
+            if (Game.gameType == GameType.PERSONAL) "PERSONAL" else "GROUP ${Game.groupID}"
     }
 
     override fun onBackPressed() {
-        AlertDialog.Builder(this).setTitle("Close current game?")
-            .setMessage("Are you sure want to close?")
-            .setPositiveButton("Ok, Close and Finish") { _, _ ->
+        AlertDialog.Builder(this).setTitle("Tutup ?")
+            .setMessage("Yakin mau menutup?")
+            .setPositiveButton("Ok, Tutup dan Selesai") { _, _ ->
                 timer.cancel()
                 Game.contactor.finished()
                 super.onBackPressed()
             }
-            .setNegativeButton("No, Continue Playing") { di, _ ->
+            .setNegativeButton("Batal") { di, _ ->
                 di.dismiss()
             }.show()
     }
 
-    inner class TaskAdapter: RecyclerView.Adapter<TaskAdapter.TaskHolder>() {
+    inner class TaskAdapter : RecyclerView.Adapter<TaskAdapter.TaskHolder>() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskHolder {
-            return TaskHolder(LayoutInflater.from(parent.context).inflate(R.layout.task_item, parent, false))
+            return TaskHolder(
+                LayoutInflater.from(parent.context).inflate(
+                    R.layout.task_item,
+                    parent,
+                    false
+                )
+            )
         }
 
         override fun getItemCount(): Int = TASKS.size
@@ -157,7 +173,7 @@ class GameActivity : AppCompatActivity(), GameListener {
             holder.bind(TASKS[position])
         }
 
-        inner class TaskHolder(v: View): RecyclerView.ViewHolder(v) {
+        inner class TaskHolder(v: View) : RecyclerView.ViewHolder(v) {
             fun bind(task: BeatsTask) {
                 itemView.apply {
                     taskID.text = "${task.taskID}".padStart(2, '0')
@@ -166,7 +182,8 @@ class GameActivity : AppCompatActivity(), GameListener {
                     } else {
                         itemContainer.setBackgroundResource(R.color.col_sel_tx)
                     }
-                    icStat.visibility = if (Game.taskActions[task.taskID].isNullOrEmpty()) View.INVISIBLE else View.VISIBLE
+                    icStat.visibility =
+                        if (Game.taskActions[task.taskID].isNullOrEmpty()) View.INVISIBLE else View.VISIBLE
                 }
             }
         }
@@ -200,7 +217,7 @@ class GameActivity : AppCompatActivity(), GameListener {
     }
 
     private fun saveLast(selectedTask: Int) {
-        if(selectedTask != null) {
+        if (selectedTask != null) {
             Game.taskActions.put(selectedTask, Game.actions)
             Game.actions = mutableListOf()
         }

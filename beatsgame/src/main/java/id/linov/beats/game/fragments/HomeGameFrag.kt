@@ -42,7 +42,7 @@ class HomeGameFrag: Fragment() {
             callback?.invoke()
         }
 
-        txtStatus.text = "User ${Game.userInformation?.name} - connected to server : ${Game.tcpServerIP}"
+        txtStatus.text = "User ${Game.userInformation?.name} - terhubung ke server : ${Game.tcpServerIP ?: "192.168.43.1"}"
     }
 
     override fun onResume() {
